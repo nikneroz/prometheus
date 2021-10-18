@@ -19,7 +19,7 @@ services:
       - cadvisor
 #      - pushgateway
     networks:
-      - traefic_public
+      - traefik_public
     deploy:
       placement:
         constraints:
@@ -41,7 +41,7 @@ services:
     ports:
       - 9100:9100
     networks:
-      - traefic_public
+      - traefik_public
     deploy:
       mode: global
       restart_policy:
@@ -54,7 +54,7 @@ services:
     volumes:
       - "./alertmanager/:/etc/alertmanager/"
     networks:
-      - traefic_public
+      - traefik_public
     command:
       - '--config.file=/etc/alertmanager/config.yml'
       - '--storage.path=/alertmanager'
@@ -75,7 +75,7 @@ services:
     # ports:
     #   - 8080:8080
     networks:
-      - traefic_public
+      - traefik_public
     deploy:
       mode: global
       restart_policy:
@@ -93,7 +93,7 @@ services:
     env_file:
       - ./grafana/config.monitoring
     networks:
-      - traefic_public
+      - traefik_public
     user: "472"
     deploy:
       placement:
@@ -132,4 +132,4 @@ networks:
 #    ports:
 #      - 9091:9091
 #    networks:
-#      - traefic_public
+#      - traefik_public
