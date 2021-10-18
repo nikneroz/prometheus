@@ -1,14 +1,6 @@
-version: '3.7'
-
-volumes:
-    prometheus_data: {}
-    grafana_data: {}
-
-networks:
-  monitor-net:
+version: '3.9'
 
 services:
-
   prometheus:
     image: prom/prometheus
     volumes:
@@ -27,7 +19,7 @@ services:
       - cadvisor
 #      - pushgateway
     networks:
-      - monitor-net
+      - traefic_public
     deploy:
       placement:
         constraints:
@@ -49,7 +41,7 @@ services:
     ports:
       - 9100:9100
     networks:
-      - monitor-net
+      - traefic_public
     deploy:
       mode: global
       restart_policy:
@@ -62,7 +54,7 @@ services:
     volumes:
       - "./alertmanager/:/etc/alertmanager/"
     networks:
-      - monitor-net
+      - traefic_public
     command:
       - '--config.file=/etc/alertmanager/config.yml'
       - '--storage.path=/alertmanager'
@@ -80,10 +72,10 @@ services:
       - /var/run:/var/run:rw
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
-    ports:
-      - 8080:8080
+    # ports:
+    #   - 8080:8080
     networks:
-      - monitor-net
+      - traefic_public
     deploy:
       mode: global
       restart_policy:
@@ -93,22 +85,43 @@ services:
     image: grafana/grafana
     depends_on:
       - prometheus
-    ports:
-      - 3000:3000
+    # ports:
+    #   - 3000:3000
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning/:/etc/grafana/provisioning/
     env_file:
       - ./grafana/config.monitoring
     networks:
-      - monitor-net
+      - traefic_public
     user: "472"
     deploy:
       placement:
         constraints:
-          - node.role==manager
-      restart_policy:
-        condition: on-failure
+          - node.role == manager
+          - node.labels.grafana.grafana-data == true
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik_public
+        - traefik.constraint-label=traefik-public
+        - traefik.http.routers.grafana-http.rule=Host(`grafana.selectel.node3`)
+        - traefik.http.routers.grafana-http.entrypoints=http
+        # - traefik.http.routers.grafana-http.middlewares=https-redirect
+        # - traefik.http.routers.grafana-https.rule=Host(`${DOMAIN?Variable not set}`)
+        # - traefik.http.routers.grafana-https.entrypoints=https
+        # - traefik.http.routers.grafana-https.tls=true
+        # - traefik.http.routers.grafana-https.tls.certresolver=le
+        - traefik.http.services.grafana.loadbalancer.server.port=3000
+
+volumes:
+  prometheus-data:
+    external: true
+  grafana-data:
+    external: true
+
+networks:
+  traefik_public:
+    external: true
 
 #  pushgateway:
 #    image: prom/pushgateway
@@ -119,4 +132,4 @@ services:
 #    ports:
 #      - 9091:9091
 #    networks:
-#      - monitor-net
+#      - traefic_public
