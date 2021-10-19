@@ -62,11 +62,11 @@ scrape_configs:
       type: 'A'
       port: 9100
 
-    relabel_configs:
-      - source_labels: [__address__]
-        target_label: instance
-        regex: '([^:]+)(:[0-9]+)?'
-        replacement: '${1}'
+    # relabel_configs:
+    #   - source_labels: [__address__]
+    #     target_label: instance
+    #     regex: '([^:]+)(:[0-9]+)?'
+    #     replacement: '${1}'
 
   - job_name: 'nvidia-smi'
 

@@ -39,6 +39,7 @@ services:
 
   node-exporter:
     image: prom/node-exporter
+    hostname: ne-{{.Node.Hostname}}
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
