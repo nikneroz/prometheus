@@ -65,7 +65,7 @@ services:
       restart_policy:
         condition: on-failure    
 
-  nvidiasmi:
+  nvidia-smi:
     image: e7db/prometheus-nvidiasmi
     privileged: true
     ports:
