@@ -69,7 +69,7 @@ services:
     image: e7db/prometheus-nvidiasmi
     privileged: true
     ports:
-      - "9202:9202/tcp"
+      - 9202:9202
     deploy:
       mode: global
       restart_policy:
