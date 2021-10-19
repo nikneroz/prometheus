@@ -66,7 +66,7 @@ services:
         condition: on-failure    
 
   gpu_exporter:
-    image: mindprince/nvidia_gpu_prometheus_exporter
+    image: ealgra/nvidia_gpu_prometheus_exporter:0.1
     ports:
       - 9445:9445
     networks:
