@@ -65,17 +65,6 @@ services:
       restart_policy:
         condition: on-failure    
 
-  gpu_exporter:
-    image: ealgra/nvidia_gpu_prometheus_exporter:0.1
-    ports:
-      - 9445:9445
-    networks:
-      - traefik_public
-    deploy:
-      mode: global
-      restart_policy:
-          condition: on-failure
-
   cadvisor:
     image: gcr.io/cadvisor/cadvisor
     volumes:
