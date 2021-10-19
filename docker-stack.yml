@@ -65,6 +65,16 @@ services:
       restart_policy:
         condition: on-failure    
 
+  nvidiasmi:
+    image: e7db/prometheus-nvidiasmi
+    privileged: true
+    ports:
+      - "9202:9202/tcp"
+    deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure    
+
   cadvisor:
     image: gcr.io/cadvisor/cadvisor
     volumes:
