@@ -1,78 +1,80 @@
-version: '3.7'
-
-volumes:
-    prometheus_data: {}
-    grafana_data: {}
-
-networks:
-  front-tier:
-  back-tier:
+version: '3.9'
 
 services:
-
   prometheus:
-    image: prom/prometheus:v2.1.0
+    image: prom/prometheus
     volumes:
       - ./prometheus/:/etc/prometheus/
-      - prometheus_data:/prometheus
+      - prometheus-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
       - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
     ports:
       - 9090:9090
-    links:
-      - cadvisor:cadvisor
-      - alertmanager:alertmanager
-#      - pushgateway:pushgateway
     depends_on:
       - cadvisor
 #      - pushgateway
     networks:
-      - back-tier
-    restart: always
-#    deploy:
-#      placement:
-#        constraints:
-#          - node.hostname == ${HOSTNAME}
+      - traefik_public
+    deploy:
+      placement:
+        constraints:
+          - node.role==manager
+      restart_policy:
+        condition: on-failure
 
   node-exporter:
-    image: prom/node-exporter
-    hostname: ne-{{.Node.Hostname}}
+    image: flaviostutz/docker-swarm-node-exporter
+    environment:
+      - NODE_ID={{.Node.ID}}
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - /:/rootfs:ro
-    command: 
-      - '--path.procfs=/host/proc' 
-      - '--path.sysfs=/host/sys'
-      - --collector.filesystem.ignored-mount-points
-      - "^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)"
+      - /etc/hostname:/etc/nodename
     ports:
       - 9100:9100
     networks:
-      - back-tier
-    restart: always
+      - traefik_public
     deploy:
       mode: global
+      restart_policy:
+          condition: on-failure
 
   alertmanager:
     image: prom/alertmanager
     ports:
       - 9093:9093
     volumes:
-      - ./alertmanager/:/etc/alertmanager/
+      - "./alertmanager/:/etc/alertmanager/"
     networks:
-      - back-tier
-    restart: always
+      - traefik_public
     command:
       - '--config.file=/etc/alertmanager/config.yml'
       - '--storage.path=/alertmanager'
-#    deploy:
-#      placement:
-#        constraints:
-#          - node.hostname == ${HOSTNAME}
+    deploy:
+      placement:
+        constraints:
+           - node.role==manager
+      restart_policy:
+        condition: on-failure    
+
+  nvidia-smi:
+    image: e7db/prometheus-nvidiasmi
+    privileged: true
+    ports:
+      - 9202:9202
+    networks:
+      - traefik_public
+    deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure    
+
   cadvisor:
     image: gcr.io/cadvisor/cadvisor
     volumes:
@@ -80,37 +82,64 @@ services:
       - /var/run:/var/run:rw
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
-    ports:
-      - 8080:8080
+    # ports:
+    #   - 8080:8080
     networks:
-      - back-tier
-    restart: always
+      - traefik_public
     deploy:
       mode: global
+      restart_policy:
+          condition: on-failure
 
   grafana:
     image: grafana/grafana
-    user: "472"
     depends_on:
       - prometheus
-    ports:
-      - 3000:3000
+    # ports:
+    #   - 3000:3000
     volumes:
-      - grafana_data:/var/lib/grafana
+      - grafana-data:/var/lib/grafana
       - ./grafana/provisioning/:/etc/grafana/provisioning/
     env_file:
       - ./grafana/config.monitoring
     networks:
-      - back-tier
-      - front-tier
-    restart: always
+      - traefik_public
+    user: "472"
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+          - node.labels.grafana.grafana-data == true
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik_public
+        - traefik.constraint-label=traefik-public
+        - traefik.http.routers.grafana-http.rule=Host(`grafana.selectel.node3`)
+        - traefik.http.routers.grafana-http.entrypoints=http
+        # - traefik.http.routers.grafana-http.middlewares=https-redirect
+        # - traefik.http.routers.grafana-https.rule=Host(`${DOMAIN?Variable not set}`)
+        # - traefik.http.routers.grafana-https.entrypoints=https
+        # - traefik.http.routers.grafana-https.tls=true
+        # - traefik.http.routers.grafana-https.tls.certresolver=le
+        - traefik.http.services.grafana.loadbalancer.server.port=3000
+
+volumes:
+  prometheus-data:
+    external: true
+  grafana-data:
+    external: true
+
+networks:
+  traefik_public:
+    external: true
 
 #  pushgateway:
 #    image: prom/pushgateway
-#    restart: always
-#    expose:
-#      - 9091
+#    deploy:
+#      mode: global
+#      restart_policy:
+#        condition: on-failure
 #    ports:
-#      - "9091:9091"
+#      - 9091:9091
 #    networks:
-#      - back-tier
+#      - traefik_public
