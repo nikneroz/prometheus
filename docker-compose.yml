@@ -114,13 +114,15 @@ services:
         - traefik.enable=true
         - traefik.docker.network=traefik_public
         - traefik.constraint-label=traefik-public
-        - traefik.http.routers.grafana-http.rule=Host(`grafana.selectel.node3`)
+        #
+        - traefik.http.routers.grafana-http.rule=Host(`grafana.vectorx.tech`)
         - traefik.http.routers.grafana-http.entrypoints=http
-        # - traefik.http.routers.grafana-http.middlewares=https-redirect
-        # - traefik.http.routers.grafana-https.rule=Host(`${DOMAIN?Variable not set}`)
-        # - traefik.http.routers.grafana-https.entrypoints=https
-        # - traefik.http.routers.grafana-https.tls=true
-        # - traefik.http.routers.grafana-https.tls.certresolver=le
+        - traefik.http.routers.grafana-http.middlewares=https-redirect
+
+        - traefik.http.routers.grafana-https.rule=Host(`grafana.vectorx.tech`)
+        - traefik.http.routers.grafana-https.entrypoints=websecure
+        - traefik.http.routers.grafana-https.tls=true
+        - traefik.http.routers.grafana-https.tls.certresolver=le
         - traefik.http.services.grafana.loadbalancer.server.port=3000
 
 volumes:
