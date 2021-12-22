@@ -114,7 +114,7 @@ services:
         - traefik.enable=true
         - traefik.docker.network=traefik_public
         - traefik.constraint-label=traefik-public
-        #
+
         - traefik.http.routers.grafana-http.rule=Host(`grafana.vectorx.tech`)
         - traefik.http.routers.grafana-http.entrypoints=http
         - traefik.http.routers.grafana-http.middlewares=https-redirect
